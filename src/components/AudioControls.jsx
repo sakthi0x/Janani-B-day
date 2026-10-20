@@ -1,8 +1,13 @@
 import React, { useEffect, useRef, useState } from "react";
 import { C } from "../constants";
 
+const AUDIO_PREFERENCE_KEY = "birthday_letter_audio_enabled";
+
 export default function AudioControls() {
-  const [isPlaying, setIsPlaying] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(() => {
+    const savedPreference = localStorage.getItem(AUDIO_PREFERENCE_KEY);
+    return savedPreference === null || savedPreference === "true";
+  });
   const audioRef = useRef(null);
 
   useEffect(() => {
@@ -14,7 +19,26 @@ export default function AudioControls() {
       }
     });
 
+    const startAudio = async () => {
+      if (!audio || localStorage.getItem(AUDIO_PREFERENCE_KEY) === "false") return;
+
+      try {
+        await audio.play();
+        setIsPlaying(true);
+      } catch (error) {
+        setIsPlaying(false);
+      }
+    };
+
+    const handleUserInteraction = () => {
+      startAudio();
+    };
+
+    window.addEventListener("birthday-letter-user-interaction", handleUserInteraction);
+    startAudio();
+
     return () => {
+      window.removeEventListener("birthday-letter-user-interaction", handleUserInteraction);
       audio?.pause();
     };
   }, []);
@@ -26,14 +50,17 @@ export default function AudioControls() {
     if (isPlaying) {
       audio.pause();
       setIsPlaying(false);
+      localStorage.setItem(AUDIO_PREFERENCE_KEY, "false");
       return;
     }
 
     try {
       await audio.play();
       setIsPlaying(true);
+      localStorage.setItem(AUDIO_PREFERENCE_KEY, "true");
     } catch (error) {
       setIsPlaying(false);
+      console.warn("Unable to start background music", error);
     }
   };
 
@@ -55,4 +82,3 @@ export default function AudioControls() {
     </div>
   );
 }
-

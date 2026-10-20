@@ -57,6 +57,7 @@ export default function App() {
 
   const handleSealClick = () => {
     if (stage !== "closed") return;
+    window.dispatchEvent(new Event("birthday-letter-user-interaction"));
     playSealCrack();
     setStage("cracking");
     setTimeout(() => {
